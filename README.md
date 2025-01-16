@@ -1,6 +1,6 @@
-# S3 JSON Visualizer
+# JSON Data Visualizer
 
-A web application that visualizes and analyzes JSON files stored in AWS S3 buckets using natural language queries.
+A web application that visualizes and analyzes JSON files using natural language queries. Supports both local files and AWS S3 buckets as data sources.
 
 ## Project Structure
 
@@ -24,8 +24,8 @@ s3_visualizer/
 - Python 3.8 or higher
 - Node.js 16 or higher
 - npm 7 or higher
-- AWS credentials with S3 access
-- OpenAI API key
+- Anthropic API key (for Claude)
+- (Optional) AWS credentials with S3 access
 
 ## Configuration
 
@@ -34,13 +34,13 @@ s3_visualizer/
 Create a `.env` file in the `backend` directory with the following variables:
 
 ```env
-# AWS Configuration
+# Required: Anthropic Configuration
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Optional: AWS Configuration (only needed for S3 access)
 AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_DEFAULT_REGION=your_aws_region
-
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key
 ```
 
 ## Installation
@@ -60,7 +60,7 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 3. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install langchain langchain-community langchain-anthropic openai plotly pandas fastapi uvicorn
 ```
 
 ### Frontend Setup
@@ -86,10 +86,10 @@ cd s3_visualizer/backend
 
 2. Start the FastAPI server:
 ```bash
-python main.py
+ANTHROPIC_API_KEY=your_api_key uvicorn main:app --host 0.0.0.0 --port 53840 --reload
 ```
 
-The backend will start on http://localhost:55317
+The backend will start on http://localhost:53840
 
 ### Start the Frontend
 
@@ -100,23 +100,34 @@ cd s3_visualizer/frontend
 
 2. Start the development server:
 ```bash
-npm run dev
+npm run dev -- --port 59573 --host 0.0.0.0
 ```
 
-The frontend will start on http://localhost:53903
+The frontend will start on http://localhost:59573
 
 ## Usage
 
-1. Open your browser and navigate to http://localhost:53903
-2. Enter your S3 bucket name
-3. (Optional) Enter a prefix to filter JSON files
+1. Open your browser and navigate to http://localhost:59573
+2. Choose your data source:
+   - Local: Uses JSON files from the `json_files` directory in the project root
+   - S3: Uses JSON files from an AWS S3 bucket
+3. For S3:
+   - Enter your bucket name
+   - (Optional) Enter a prefix to filter JSON files
 4. Set the maximum number of files to process (default: 100)
-5. Click "List JSON Files" to see available JSON files
+5. Click "List JSON Files" to see available files
 6. Enter your query about the data
 7. Click "Analyze Data" to process and visualize the results
 
 ### Example Queries
 
+For test reports:
+- "What is the success rate and distribution of test states?"
+- "Show me the most common test cases"
+- "How long do tests typically take to run?"
+- "What is the failure rate and which tests fail most often?"
+
+For general JSON data:
 - "Show me the distribution of values in field X"
 - "What are the top 5 most common values in field Y?"
 - "Is there any correlation between field A and field B?"
@@ -169,8 +180,8 @@ uvicorn main:app --host 0.0.0.0 --port 55317 --workers 4
 
 1. Backend Issues:
    - Check environment variables are set correctly
-   - Verify AWS credentials and permissions
-   - Check OpenAI API key is valid
+   - Verify Anthropic API key is valid
+   - For S3: Verify AWS credentials and permissions
    - Look for error messages in the backend logs
 
 2. Frontend Issues:
@@ -186,12 +197,17 @@ uvicorn main:app --host 0.0.0.0 --port 55317 --workers 4
 
 ## Development Notes
 
-- The backend uses FastAPI for API endpoints
-- LangChain is used for natural language processing
-- Plotly is used for data visualization
-- Vue.js 3 with Composition API for frontend
-- Vite for frontend development and building
-- Axios for API communication
+- Backend:
+  - FastAPI for API endpoints
+  - LangChain with Claude (Anthropic) for natural language processing
+  - Plotly for data visualization
+  - Support for both local files and S3 data sources
+- Frontend:
+  - Vue.js 3 with Composition API
+  - Vite for development and building
+  - Dark mode support
+  - Responsive design
+  - Axios for API communication
 
 ## Contributing
 
