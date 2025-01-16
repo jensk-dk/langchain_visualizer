@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional, Literal
+from typing import List, Dict, Any, Optional, Literal, Union
 import boto3
 import json
 import os
@@ -77,6 +77,21 @@ def load_json_file_local(file_path: str) -> Dict:
         except Exception as read_error:
             print(f"Could not read file for preview: {read_error}")
         return None
+
+def _format_data(data: Union[List, Dict]) -> List[str]:
+    """Format JSON data into readable lines."""
+    lines = []
+    if isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict):
+                for key, value in item.items():
+                    lines.append(f"{key}: {value}")
+            else:
+                lines.append(str(item))
+    elif isinstance(data, dict):
+        for key, value in data.items():
+            lines.append(f"{key}: {value}")
+    return lines
 
 def merge_json_data(json_files: List[Dict]) -> Dict:
     """Merge multiple JSON files into a single structure."""
@@ -267,68 +282,93 @@ async def analyze_data(request: QueryRequest):
             max_tokens_to_sample=4000  # Set a maximum token limit
         )
 
+        # Print the merged data structure for debugging
+        print("\nMerged data structure:")
+        print(json.dumps(merged_data, indent=2)[:500] + "...")
+
         # Create JSON spec for the tools
+        # Ensure merged_data is properly structured
+        if 'merged_data' not in merged_data:
+            # If merged_data is not a key, it's probably the array itself
+            data_dict = {
+                "merged_data": merged_data.get("merged_data", merged_data)
+            }
+        else:
+            data_dict = merged_data
+
+        print("\nData being passed to JsonSpec:")
+        print(json.dumps(data_dict, indent=2)[:500] + "...")
+        
         json_spec = JsonSpec(
-            dict_=merged_data,
-            max_value_length=1000,  # Limit the length of displayed values
-            num_examples=3  # Number of examples to show in array values
+            dict_=data_dict,  # Use the properly structured data
+            max_value_length=10000,  # Large limit for value length
+            num_examples=100  # Large number of examples
         )
         
         # Create the toolkit and agent
         toolkit = JsonToolkit(spec=json_spec)
         
-        # Print available tools for debugging
+        # Print available tools and data structure for debugging
         print("\nAvailable tools:")
         for tool in toolkit.get_tools():
             print(f"- {tool.name}: {tool.description}")
+            
+        print("\nData structure:")
+        print("- Root keys:", list(json_spec.dict_.keys()))
+        print("- Merged data type:", type(merged_data))
+        if isinstance(merged_data, dict):
+            print("- Merged data keys:", list(merged_data.keys()))
         
+        # Create the agent with more iterations and longer timeout
         agent_executor = create_json_agent(
             llm=llm,
             toolkit=toolkit,
-            verbose=True
-        ).with_config({
-            "handle_parsing_errors": True,
-            "max_iterations": 10
-        })
+            verbose=True,
+            handle_parsing_errors=True,
+            max_iterations=15,
+            early_stopping_method="force",
+            max_execution_time=30.0  # 30 seconds timeout
+        )
         
-        # Enhance the query to handle multiple files
-        enhanced_query = f"""You are analyzing test report data. The data is stored in a JSON structure with test reports in the 'merged_data' array.
+        # System instructions for the agent
+        system_instructions = """You are analyzing test report data stored in a JSON structure. Follow these EXACT steps:
 
-Each test report in the array has this structure:
-- id: unique identifier
-- title: test case title
-- state: test result state (e.g., "Successful", "Failed")
-- test_case_id: identifier for the test case
-- created: timestamp when the test started
-- last_changed: timestamp when the test finished
-- timed_out: boolean indicating if the test timed out
-
-Your task is to analyze this data and provide:
-1. Total number of test cases (count of unique test_case_id values)
-2. Success rate (percentage of tests with state "Successful")
-3. Distribution of test states (count for each unique state value)
-4. Average test duration in seconds (difference between last_changed and created timestamps)
-5. Top 5 most frequently occurring test case IDs with their counts
-6. Any patterns or anomalies in the data
-
-Format the numeric results precisely, for example:
-- Total test cases: 150
-- Success rate: 85.7%
-- Average duration: 45.2 seconds
-
-To access the data, you can use these tools:
-1. json_spec_list_keys: Lists all available keys in the JSON structure
-2. json_spec_get_value: Gets the value at a specific path in the JSON structure
-
-Example usage:
-1. To see available keys:
-   Action: json_spec_list_keys
-   
-2. To get the test reports array:
+1. First, get the test reports:
    Action: json_spec_get_value
    Action Input: "merged_data"
 
-Start by listing the available keys to confirm the data structure."""
+2. After getting the data, analyze it to find:
+   - Total number of reports
+   - Unique test_case_id values
+   - Count of reports in each state
+
+3. Then provide your analysis in this EXACT format:
+
+Final Answer:
+Test Report Analysis:
+
+Total Reports: [number]
+Unique Test Cases: [number]
+
+Test States:
+- [State]: [count] ([percentage]%)
+- [State]: [count] ([percentage]%)
+...
+
+IMPORTANT:
+- If you can't get the data, respond with EXACTLY:
+  Final Answer: Unable to access test report data.
+- If you get the data but can't analyze it, respond with EXACTLY:
+  Final Answer: Retrieved data but unable to analyze test reports.
+- DO NOT show any code or calculations
+- DO NOT include any explanations
+- DO NOT use backticks (`) or code blocks
+- DO NOT include any other text or formatting
+
+Remember: Just get the data with ONE call to json_spec_get_value, analyze it, and show the results in the exact format shown above."""
+
+        # Combine system instructions with user query
+        enhanced_query = f"{system_instructions}\n\nUser query: {request.query}"
         
         # Execute the query
         result = agent_executor.invoke({"input": enhanced_query})
@@ -460,8 +500,103 @@ Start by listing the available keys to confirm the data structure."""
             else:
                 plot_json = None
             
+            # Process the agent's response
+            output = result["output"] if isinstance(result, dict) else str(result)
+            print("\nRaw output from LLM:")
+            print(output)
+            
+            # Extract content after "Final Answer:"
+            if "Final Answer:" in output:
+                output = output.split("Final Answer:")[1].strip()
+            
+            # Split into lines and process
+            lines = output.split('\n')
+            final_output = []
+            print("\nProcessing lines...")
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Skip agent's internal dialogue
+                if any(line.startswith(prefix) for prefix in [
+                    "Thought:", "Action:", "Observation:", "Tool:", "System:", 
+                    "Assistant:", "Human:"
+                ]):
+                    continue
+                
+                # Skip lines with template variables
+                if "{" in line or "}" in line:
+                    continue
+                
+                # Skip planning and explanation lines
+                if any(line.startswith(prefix) for prefix in [
+                    "I will", "Let me", "First", "Then", "Next", "Finally",
+                    "To get", "To find", "To calculate", "Here's", "Here are",
+                    "The most common", "This shows", "This indicates", "Based on"
+                ]):
+                    continue
+                
+                # Keep section headers
+                if line.endswith(":") and not line.startswith("-"):
+                    final_output.append("")  # Add blank line before section
+                    final_output.append(line)
+                    print(f"Added section header: {line}")
+                    continue
+
+                # Include lines that look like results
+                if (line.startswith("-") or  # Bullet points
+                    line.startswith("•") or  # Alternative bullet points
+                    line.startswith("*") or  # Alternative bullet points
+                    any(line.startswith(str(i) + ".") for i in range(1, 10)) or  # Numbered lists
+                    ":" in line or  # Key-value pairs
+                    "%" in line or  # Percentages
+                    any(word in line.lower() for word in [
+                        "total", "rate", "average", "distribution", 
+                        "frequency", "count", "number", "success",
+                        "failed", "passed", "overall"
+                    ])):  # Statistics and results
+                    final_output.append(line)
+                    print(f"Added result line: {line}")
+                else:
+                    print(f"Skipped line: {line}")
+                
+            print("\nBefore cleaning, collected lines:")
+            for line in final_output:
+                print(f"  {line}")
+
+            # Clean up the output
+            cleaned_output = []
+            prev_line = ""
+            
+            for line in final_output:
+                # Skip duplicate lines
+                if line == prev_line:
+                    print(f"Skipping duplicate: {line}")
+                    continue
+                # Don't add blank line if previous line was blank
+                if line == "" and prev_line == "":
+                    print(f"Skipping extra blank line")
+                    continue
+                cleaned_output.append(line)
+                prev_line = line
+            
+            # Remove leading/trailing blank lines
+            while cleaned_output and cleaned_output[0] == "":
+                cleaned_output.pop(0)
+            while cleaned_output and cleaned_output[-1] == "":
+                cleaned_output.pop()
+            
+            print("\nAfter cleaning, final lines:")
+            for line in cleaned_output:
+                print(f"  {line}")
+            
+            # Join the lines back together
+            final_message = "\n".join(cleaned_output) if cleaned_output else "No analysis results available."
+            
             return {
-                "message": result["output"] if isinstance(result, dict) else str(result),
+                "message": final_message,
                 "visualization": plot_json,
                 "success": True,
                 "files_processed": len(loaded_files),
@@ -469,7 +604,7 @@ Start by listing the available keys to confirm the data structure."""
             }
         except Exception as e:
             return {
-                "message": result["output"] if isinstance(result, dict) else str(result),
+                "message": final_message,
                 "visualization": None,
                 "success": True,
                 "files_processed": len(loaded_files),
