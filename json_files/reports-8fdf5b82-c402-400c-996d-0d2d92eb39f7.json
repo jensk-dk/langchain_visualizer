@@ -1,0 +1,128 @@
+[
+{
+  "id": "7dcba6b2-2c6a-45dc-b49a-ff8af9c12e8b",
+  "title": "org.hbbtv_DA541230",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/7dcba6b2-2c6a-45dc-b49a-ff8af9c12e8b/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_DA541230",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/7dcba6b2-2c6a-45dc-b49a-ff8af9c12e8b",
+    "test_case": "/testcases/org.hbbtv_DA541230",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/7dcba6b2-2c6a-45dc-b49a-ff8af9c12e8b/steps",
+    "finish": "/reports/7dcba6b2-2c6a-45dc-b49a-ff8af9c12e8b/finish"
+  },
+  "created": "2024-11-26T09:00:49.658201Z",
+  "last_changed": "2024-11-26T09:01:32.762459Z",
+  "timed_out": false
+},
+{
+  "id": "d9782950-2d05-4f05-92bc-45fee29038be",
+  "title": "org.hbbtv_DA541240",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/d9782950-2d05-4f05-92bc-45fee29038be/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_DA541240",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/d9782950-2d05-4f05-92bc-45fee29038be",
+    "test_case": "/testcases/org.hbbtv_DA541240",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/d9782950-2d05-4f05-92bc-45fee29038be/steps",
+    "finish": "/reports/d9782950-2d05-4f05-92bc-45fee29038be/finish"
+  },
+  "created": "2024-11-26T09:01:36.940228Z",
+  "last_changed": "2024-11-26T09:02:08.564533Z",
+  "timed_out": false
+},
+{
+  "id": "5b134ae5-3f7a-4935-b940-fed9520e02c7",
+  "title": "org.hbbtv_DA541250",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/5b134ae5-3f7a-4935-b940-fed9520e02c7/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_DA541250",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/5b134ae5-3f7a-4935-b940-fed9520e02c7",
+    "test_case": "/testcases/org.hbbtv_DA541250",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/5b134ae5-3f7a-4935-b940-fed9520e02c7/steps",
+    "finish": "/reports/5b134ae5-3f7a-4935-b940-fed9520e02c7/finish"
+  },
+  "created": "2024-11-26T09:02:13.083741Z",
+  "last_changed": "2024-11-26T09:02:37.616403Z",
+  "timed_out": false
+},
+{
+  "id": "70c23846-18bd-4463-9297-8b2adf7f3b63",
+  "title": "org.hbbtv_DASH-TIMELINE0140",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/70c23846-18bd-4463-9297-8b2adf7f3b63/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_DASH-TIMELINE0140",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/70c23846-18bd-4463-9297-8b2adf7f3b63",
+    "test_case": "/testcases/org.hbbtv_DASH-TIMELINE0140",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/70c23846-18bd-4463-9297-8b2adf7f3b63/steps",
+    "finish": "/reports/70c23846-18bd-4463-9297-8b2adf7f3b63/finish"
+  },
+  "created": "2024-11-26T09:02:41.811044Z",
+  "last_changed": "2024-11-26T09:02:48.584458Z",
+  "timed_out": false
+},
+{
+  "id": "6efc889e-eb9f-4390-81ae-e53c2ac1d945",
+  "title": "org.hbbtv_RELIABILITY05",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/6efc889e-eb9f-4390-81ae-e53c2ac1d945/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_RELIABILITY05",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/6efc889e-eb9f-4390-81ae-e53c2ac1d945",
+    "test_case": "/testcases/org.hbbtv_RELIABILITY05",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/6efc889e-eb9f-4390-81ae-e53c2ac1d945/steps",
+    "finish": "/reports/6efc889e-eb9f-4390-81ae-e53c2ac1d945/finish"
+  },
+  "created": "2024-11-26T09:02:59.218042Z",
+  "last_changed": "2024-11-26T09:04:26.302363Z",
+  "timed_out": false
+},
+{
+  "id": "3f259fc6-9b7e-4db2-bb10-f3e56e6ba781",
+  "title": "org.hbbtv_SMALL_INC0100",
+  "steps": {
+    "collectionUrl": "http://harness.test/api/reports/3f259fc6-9b7e-4db2-bb10-f3e56e6ba781/steps",
+    "reportsUrl": "http://harness.test/api/reports"
+  },
+  "state": "Successful",
+  "test_case_id": "org.hbbtv_SMALL_INC0100",
+  "test_run_id": "8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+  "links": {
+    "this": "/reports/3f259fc6-9b7e-4db2-bb10-f3e56e6ba781",
+    "test_case": "/testcases/org.hbbtv_SMALL_INC0100",
+    "testrun": "/testruns/8fdf5b82-c402-400c-996d-0d2d92eb39f7",
+    "steps": "/reports/3f259fc6-9b7e-4db2-bb10-f3e56e6ba781/steps",
+    "finish": "/reports/3f259fc6-9b7e-4db2-bb10-f3e56e6ba781/finish"
+  },
+  "created": "2024-11-26T09:04:33.316003Z",
+  "last_changed": "2024-11-26T09:04:34.260081Z",
+  "timed_out": false
+}
+]

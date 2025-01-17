@@ -287,15 +287,25 @@ async def analyze_data(request: QueryRequest):
         print(json.dumps(merged_data, indent=2)[:500] + "...")
 
         # Create JSON spec for the tools
-        # Ensure merged_data is properly structured
-        if 'merged_data' not in merged_data:
-            # If merged_data is not a key, it's probably the array itself
-            data_dict = {
-                "merged_data": merged_data.get("merged_data", merged_data)
+        # Print the merged data structure for debugging
+        print("\nMerged data structure:")
+        print(json.dumps(merged_data, indent=2)[:500] + "...")
+        
+        # Extract the test reports array
+        test_reports = merged_data.get("merged_data", [])
+        if not isinstance(test_reports, list):
+            test_reports = [test_reports]
+            
+        # Create a properly structured data dictionary
+        data_dict = {
+            "reports": test_reports,
+            "metadata": {
+                "total_reports": len(test_reports),
+                "states": list(set(r.get("state", "") for r in test_reports)),
+                "test_case_ids": list(set(r.get("test_case_id", "") for r in test_reports))
             }
-        else:
-            data_dict = merged_data
-
+        }
+        
         print("\nData being passed to JsonSpec:")
         print(json.dumps(data_dict, indent=2)[:500] + "...")
         
@@ -331,41 +341,57 @@ async def analyze_data(request: QueryRequest):
         )
         
         # System instructions for the agent
-        system_instructions = """You are analyzing test report data stored in a JSON structure. Follow these EXACT steps:
+        system_instructions = """You are analyzing test report data stored in a JSON structure with this format:
+{
+  "reports": [array of test report objects],
+  "metadata": {
+    "total_reports": number,
+    "states": [array of unique states],
+    "test_case_ids": [array of unique test case IDs]
+  }
+}
 
-1. First, get the test reports:
-   Action: json_spec_get_value
-   Action Input: "merged_data"
+To get the data:
+1. Use json_spec_get_value with path "reports" for the test reports array
+2. Use json_spec_get_value with path "metadata" for the summary data
+3. Use json_spec_get_value with path "metadata.test_case_ids" for just the test case IDs
+4. Use json_spec_get_value with path "metadata.states" for just the state values
 
-2. After getting the data, analyze it to find:
-   - Total number of reports
-   - Unique test_case_id values
-   - Count of reports in each state
+IMPORTANT RULES:
+1. ALWAYS start your response with "Final Answer:"
+2. DO NOT show any code or calculations
+3. DO NOT use variable names or placeholders like [value] or {variable}
+4. DO NOT include explanations or steps
+5. DO NOT use backticks (`) or code blocks
+6. If you can't get the data, respond with EXACTLY:
+   Final Answer: Unable to access test report data.
 
-3. Then provide your analysis in this EXACT format:
+Example responses:
 
+For "Show test states":
+Final Answer:
+Test States:
+- Successful: 850 (85.0%)
+- Failed: 120 (12.0%)
+- Skipped: 25 (2.5%)
+- Timed Out: 5 (0.5%)
+
+For "List test case IDs":
+Final Answer:
+Test Case IDs:
+- org.hbbtv_TEST001
+- org.hbbtv_TEST002
+- org.hbbtv_TEST003
+
+For "Show summary":
 Final Answer:
 Test Report Analysis:
-
-Total Reports: [number]
-Unique Test Cases: [number]
+Total Reports: 42
+Unique Test Cases: 15
 
 Test States:
-- [State]: [count] ([percentage]%)
-- [State]: [count] ([percentage]%)
-...
-
-IMPORTANT:
-- If you can't get the data, respond with EXACTLY:
-  Final Answer: Unable to access test report data.
-- If you get the data but can't analyze it, respond with EXACTLY:
-  Final Answer: Retrieved data but unable to analyze test reports.
-- DO NOT show any code or calculations
-- DO NOT include any explanations
-- DO NOT use backticks (`) or code blocks
-- DO NOT include any other text or formatting
-
-Remember: Just get the data with ONE call to json_spec_get_value, analyze it, and show the results in the exact format shown above."""
+- Successful: 36 (85.7%)
+- Failed: 6 (14.3%)"""
 
         # Combine system instructions with user query
         enhanced_query = f"{system_instructions}\n\nUser query: {request.query}"

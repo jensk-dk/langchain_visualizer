@@ -1,12 +1,28 @@
 <template>
-  <div id="app">
-    <h1>S3 JSON Visualizer</h1>
+  <div id="app" :class="{ 'dark-mode': darkMode }">
+    <div class="header">
+      <h1>JSON Data Visualizer</h1>
+      <button class="theme-toggle" @click="darkMode = !darkMode">
+        {{ darkMode ? '☀️' : '🌙' }}
+      </button>
+    </div>
     
     <div class="input-container">
       <div class="input-group">
-        <label>S3 Bucket Name:</label>
-        <input v-model="bucketName" placeholder="Enter bucket name">
+        <label>Data Source:</label>
+        <select v-model="sourceType">
+          <option value="local">Local JSON Files</option>
+          <option value="s3">Amazon S3</option>
+        </select>
       </div>
+
+      <!-- S3-specific inputs -->
+      <template v-if="sourceType === 's3'">
+        <div class="input-group">
+          <label>S3 Bucket Name:</label>
+          <input v-model="bucketName" placeholder="Enter bucket name">
+        </div>
+      </template>
       
       <div class="input-group">
         <label>Prefix (Optional):</label>
@@ -18,7 +34,7 @@
         <input type="number" v-model.number="maxFiles" min="1" max="1000" placeholder="Maximum number of files to process">
       </div>
       
-      <button @click="listFiles" :disabled="loading || !bucketName">
+      <button @click="listFiles" :disabled="loading || (sourceType === 's3' && !bucketName)">
         List JSON Files
       </button>
       
@@ -40,7 +56,7 @@
         ></textarea>
       </div>
       
-      <button @click="analyzeData" :disabled="loading || !bucketName || !query">
+      <button @click="analyzeData" :disabled="loading || (sourceType === 's3' && !bucketName) || !query">
         {{ loading ? 'Analyzing...' : 'Analyze Data' }}
       </button>
     </div>
@@ -75,11 +91,38 @@ export default {
       bucketName: '',
       prefix: '',
       maxFiles: 100,
-      query: '',
+      sourceType: 'local',  // Default to local files
+      darkMode: false,
+      query: `What is the success rate and distribution of test states?`,  // Default query for test reports
       result: null,
       error: null,
       loading: false,
       filesList: []
+    }
+  },
+  watch: {
+    sourceType(newValue) {
+      this.error = null;
+      this.result = null;
+      
+      // Automatically list local files when switching to local mode
+      if (newValue === 'local') {
+        this.listFiles();
+      }
+    },
+    
+    // Update visualization when dark mode changes
+    darkMode() {
+      if (this.result?.visualization) {
+        this.analyzeData();
+      }
+    }
+  },
+  
+  mounted() {
+    // List local files on component mount
+    if (this.sourceType === 'local') {
+      this.listFiles();
     }
   },
   methods: {
@@ -102,8 +145,9 @@ export default {
       this.filesList = [];
       
       try {
-        const response = await axios.get(`http://localhost:55317/list_files`, {
+        const response = await axios.get(`http://localhost:53840/list_files`, {
           params: {
+            source_type: this.sourceType,
             bucket_name: this.bucketName,
             prefix: this.prefix
           }
@@ -123,11 +167,13 @@ export default {
       this.result = null;
 
       try {
-        const response = await axios.post('http://localhost:55317/analyze', {
+        const response = await axios.post('http://localhost:53840/analyze', {
+          source_type: this.sourceType,
           bucket_name: this.bucketName,
           prefix: this.prefix,
           max_files: this.maxFiles,
-          query: this.query
+          query: this.query,
+          dark_mode: this.darkMode
         });
 
         this.result = response.data;
@@ -158,6 +204,26 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  background-color: var(--bg-color, white);
+  color: var(--text-color, black);
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  margin: 0;
 }
 
 .input-container {
@@ -240,7 +306,56 @@ button:disabled {
 }
 
 .stats {
-  color: #666;
+  color: var(--stats-color);
   font-style: italic;
+  margin-top: 10px;
+}
+
+/* Dark mode styles */
+.dark-mode {
+  --bg-color: #1a1a1a;
+  --text-color: #e0e0e0;
+  --stats-color: #888;
+}
+
+/* Light mode styles */
+:root {
+  --bg-color: white;
+  --text-color: black;
+  --stats-color: #666;
+}
+
+/* Dark mode overrides */
+.dark-mode .input-container,
+.dark-mode .files-list,
+.dark-mode .result {
+  border-color: #333;
+  background-color: #242424;
+}
+
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+  background-color: #333;
+  color: #e0e0e0;
+  border-color: #444;
+}
+
+.dark-mode button:not(:disabled) {
+  background-color: #2c5530;
+}
+
+.dark-mode button:disabled {
+  background-color: #333;
+  color: #666;
+}
+
+.dark-mode .files-list {
+  background-color: #242424;
+}
+
+.dark-mode .error {
+  background-color: #2a1515;
+  border-color: #5c2626;
 }
 </style>
